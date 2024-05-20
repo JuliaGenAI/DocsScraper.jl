@@ -1,4 +1,4 @@
-# DocsScraper: "A document scraping and parsing tool used to create a custom RAG database for AIHelpMe.jl"
+## DocsScraper: "A document scraping and parsing tool used to create a custom RAG database for AIHelpMe.jl"
 
 This tool is used to collect and parse Julia's extensive documentation.
 
