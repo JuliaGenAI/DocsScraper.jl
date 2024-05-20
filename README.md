@@ -10,7 +10,6 @@ Pkg.instantiate()
 ```
 
 ## Usage
-1. **Basic Usage**:
 ```julia
    parsed_text = parse_url("https://docs.julialang.org/en/v1/base/multi-threading/")
 ```
