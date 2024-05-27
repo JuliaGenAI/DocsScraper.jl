@@ -105,6 +105,9 @@ Function to extract urls inside <a> tags
 - url_queue: Vector in which extracted URLs will be appended
 """
 function get_urls!(url::AbstractString, url_queue::Vector{<:AbstractString})
+
+    ## TODO: Show some respect to robots.txt
+
     @info "Scraping link: $url"
     try
         fetched_content = HTTP.get(url)

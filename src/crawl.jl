@@ -28,6 +28,7 @@ function makeRAG(input_urls::Vector{<:AbstractString})
     url_queue = Vector{AbstractString}(input_urls)
     visited_url_set = Set{AbstractString}()
     parsed_blocks = []
+    ## TODO: Add parallel processing for URLs
 
     while !isempty(url_queue)
         url = url_queue[1]

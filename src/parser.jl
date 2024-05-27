@@ -407,7 +407,9 @@ Any[
 ]
 """
 function parse_url_to_blocks(url::AbstractString)
-    ## TODO: Check if you need parallel processing for multiple urls
+
+    ## TODO: Store the parsed data to local 
+
     @info "Parsing URL: $url"
     try
         base_url = get_base_url(url)
