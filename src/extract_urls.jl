@@ -1,13 +1,10 @@
-using Gumbo
-using Gumbo: HTMLDocument, HTMLElement
-
-
 # Temporary until I find a package to simplify this
 
 function resolve_url(base_url::String, relative_url::String)::String
     base_uri = URI(base_url)
     relative_uri = URI(relative_url)
 
+    ## TODO: Make a list of allowed URLs which would contain Julia docs hostnames
     if length(relative_url) > 4 && relative_url[1:4] == "http"
         if base_uri.host == relative_uri.host
             return relative_url
