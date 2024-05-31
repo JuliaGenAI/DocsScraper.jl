@@ -5,6 +5,8 @@ function resolve_url(base_url::String, relative_url::String)::String
     relative_uri = URI(relative_url)
 
     ## TODO: Make a list of allowed URLs which would contain Julia docs hostnames
+    ## TODO: Look for version number either on the bottom left dropdown or identify on the url
+
     if length(relative_url) > 4 && relative_url[1:4] == "http"
         if base_uri.host == relative_uri.host
             return relative_url
@@ -103,12 +105,11 @@ Function to extract urls inside <a> tags
 """
 function get_urls!(url::AbstractString, url_queue::Vector{<:AbstractString})
 
-    ## TODO: Show some respect to robots.txt
-
     @info "Scraping link: $url"
     try
         fetched_content = HTTP.get(url)
         parsed = parsehtml(String(fetched_content.body))
+        ## TODO: Like html parser, also add an xml parser for sitemap
         find_urls!(url, parsed.root, url_queue)
     catch e
         println("Bad URL")
