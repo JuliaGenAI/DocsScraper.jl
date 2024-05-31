@@ -423,7 +423,7 @@ function parse_url_to_blocks(url::AbstractString)
         heading_hierarchy = Dict{Symbol,Any}()
         process_node!(get_html_content(parsed.root), heading_hierarchy, parsed_blocks)
         return parsed_blocks
-    catch e
+    catch
         println("Bad URL")
     end
 end
