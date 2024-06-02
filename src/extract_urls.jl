@@ -77,7 +77,7 @@ Function to recursively find <a> and extract the urls
 - node: The HTML node of type Gumbo.HTMLElement
 - url_queue: Vector in which extracted URLs will be appended
 """
-function find_urls!(url::AbstractString, node::Gumbo.HTMLElement, url_queue::Vector{<:AbstractString})
+function find_urls_html!(url::AbstractString, node::Gumbo.HTMLElement, url_queue::Vector{<:AbstractString})
     if Gumbo.tag(node) == :a && haskey(node.attributes, "href")
         href = node.attributes["href"]
         if href !== nothing && !isempty(resolve_url(url, href))
@@ -87,10 +87,27 @@ function find_urls!(url::AbstractString, node::Gumbo.HTMLElement, url_queue::Vec
 
     for child in node.children
         if isa(child, HTMLElement)
-            find_urls!(url, child, url_queue)
+            find_urls_html!(url, child, url_queue)
         end
     end
 end
+
+
+
+function find_urls_xml!(url::AbstractString, url_queue::Vector{<:AbstractString})
+    try
+        fetched_content = HTTP.get(url)
+        xml_content = String(fetched_content.body)
+        url_pattern = r"http[^<]+"
+        urls = eachmatch(url_pattern, xml_content)
+        for url in urls
+            push!(url_queue, url.match)
+        end
+    catch
+        println("Can't get sitemap: $url")
+    end
+end
+
 
 
 """
@@ -106,12 +123,17 @@ Function to extract urls inside <a> tags
 function get_urls!(url::AbstractString, url_queue::Vector{<:AbstractString})
 
     @info "Scraping link: $url"
+    # println(url)
     try
         fetched_content = HTTP.get(url)
-        parsed = parsehtml(String(fetched_content.body))
-        ## TODO: Like html parser, also add an xml parser for sitemap
-        find_urls!(url, parsed.root, url_queue)
+        parsed = Gumbo.parsehtml(String(fetched_content.body))
+        if (url[end-3:end] == ".xml")
+            find_urls_xml!(url_xml, url_queue)
+        else
+            find_urls_html!(url, parsed.root, url_queue)
+        end
+        # print("-------------")
     catch e
-        println("Bad URL")
+        println("Bad URL: $url")
     end
 end

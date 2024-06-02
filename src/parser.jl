@@ -414,7 +414,7 @@ function parse_url_to_blocks(url::AbstractString)
     try
         base_url = get_base_url(url)
         fetched_content = HTTP.get(base_url)
-        parsed = parsehtml(String(fetched_content.body))
+        parsed = Gumbo.parsehtml(String(fetched_content.body))
         # Getting title of the document 
         # title = [el
         #          for el in AbstractTrees.PreOrderDFS(r_parsed.root)

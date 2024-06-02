@@ -1,5 +1,7 @@
 using HTTP, Gumbo, AbstractTrees, URIs
 using Gumbo: HTMLDocument, HTMLElement
+using EzXML
+# using Regex
 
 # using Robots
 
