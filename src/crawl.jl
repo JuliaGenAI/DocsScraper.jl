@@ -1,6 +1,7 @@
 include("parser.jl")
 
-function parse_robots_txt(robots_txt::String, base_url::AbstractString)
+## TODO: Make multiple dispatch for the following function
+function parse_robots_txt!(robots_txt::String, url_queue::Vector{<:AbstractString})
     ## TODO: Make a cache of rules for a quick lookup
     rules = Dict{String,Dict{String,Vector{String}}}()
     current_user_agent = ""
@@ -22,7 +23,11 @@ function parse_robots_txt(robots_txt::String, base_url::AbstractString)
             if current_user_agent != "" && allow_path != ""
                 push!(rules[current_user_agent]["Allow"], allow_path)
             end
+        elseif startswith(line, "Sitemap:")
+            url = strip(split(line, ":")[2])
+            push!(url_queue, url)
         end
+
     end
     return rules
 end
@@ -30,7 +35,8 @@ end
 
 function check_robots_txt(user_agent::AbstractString,
     url::AbstractString,
-    restricted_urls::Dict{String,Set{AbstractString}})
+    restricted_urls::Dict{String,Set{AbstractString}},
+    url_queue::Vector{<:AbstractString})
 
     URI = URIs.URI(url)
     path = URI.path
@@ -47,7 +53,7 @@ function check_robots_txt(user_agent::AbstractString,
     try
         response = HTTP.get(robots_URL)
         robots_txt = String(response.body)
-        rules = parse_robots_txt(robots_txt, url)
+        rules = parse_robots_txt!(robots_txt, url_queue)
         user_agents = [user_agent, "*"]
         for ua in user_agents
             if haskey(rules, ua)
@@ -117,7 +123,7 @@ function makeRAG(input_urls::Vector{<:AbstractString})
         ## TODO: Show some respect to robots.txt
         if !in(base_url, visited_url_set)
             push!(visited_url_set, base_url)
-            if !check_robots_txt("*", base_url, restricted_urls)
+            if !check_robots_txt("*", base_url, restricted_urls, url_queue)
                 break
             end
             get_urls!(base_url, url_queue)
