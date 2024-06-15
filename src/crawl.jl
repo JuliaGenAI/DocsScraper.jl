@@ -28,8 +28,6 @@ function parse_robots_txt!(robots_txt::String, url_queue::Vector{<:AbstractStrin
         end
 
     end
-    # println("rules:")
-    # println(rules)
     return rules
 end
 
@@ -68,7 +66,7 @@ function check_robots_txt(user_agent::AbstractString,
 
                 for disallow_rule in disallow_rules
                     if startswith(path, disallow_rule)
-                        println("Not allowed to crawl $url")
+                        @warn "Not allowed to crawl $url"
                         return false
                     end
                 end
@@ -76,7 +74,7 @@ function check_robots_txt(user_agent::AbstractString,
         end
         return true
     catch
-        println("robots.txt unavailable for $url")
+        @info "robots.txt unavailable for $url"
         return true
     end
 end
@@ -150,68 +148,9 @@ function process_hostname(url::AbstractString, hostname_dict)
 end
 
 
-
-"""
-    makeRAG(input_urls::Vector{<:AbstractString})
-
-Extracts the base url.
-
-# Arguments
-- `input_urls`: vector containing URL strings to parse
-"""
-function crawl(input_urls::Vector{<:AbstractString})
-
-    url_queue = Vector{AbstractString}(input_urls)
-    visited_url_set = Set{AbstractString}()
-    parsed_blocks = []
-    hostname_url_dict = Dict{AbstractString,Vector{AbstractString}}()
-
-    # process_paths(input_urls[1])
-    # @info "done"
-    # return
-
-    # TODO: Add parallel processing for URLs
-    while !isempty(url_queue)
-        url = url_queue[1]
-        popfirst!(url_queue)
-        base_url = get_base_url(url)
-
-        if !in(base_url, visited_url_set)
-            push!(visited_url_set, base_url)
-            if check_robots_txt("*", base_url, url_queue)
-                try
-                    get_urls!(base_url, url_queue)
-                    hostname_url_dict = process_hostname(url, hostname_url_dict)
-                catch
-                    println("Bad URL: ", base_url)
-                end
-            end
-        end
-    end
-
-    output_chunks = Vector{SubString{String}}()
-    output_sources = Vector{String}()
-    SAVE_CHUNKS = true
-    CHUNK_SIZE = 512
-    for (hostname, urls) in hostname_url_dict
-        for url in urls
-            try
-                chunks, sources = process_paths(url)
-                append!(output_chunks, chunks)
-                append!(output_sources, sources)
-            catch
-                @error "error!! check url: $url"
-            end
-        end
-        if SAVE_CHUNKS
-            serialize("C:/Users/shrey/Desktop/stuff/assignments/grad/projects/Julia/processed_docs/$(hostname)-chunks-$(CHUNK_SIZE).jls", output_chunks)
-            serialize("C:/Users/shrey/Desktop/stuff/assignments/grad/projects/Julia/processed_docs/$(hostname)-sources-$(CHUNK_SIZE).jls", output_sources)
-        end
-
-    end
-
+function make_embeddings()
     embedder = RT.BatchEmbedder()
-    dir_path = "C:/Users/shrey/Desktop/stuff/assignments/grad/projects/Julia/processed_docs/"
+    dir_path = joinpath("RAGKit", "knowledge_packs")
     entries = readdir(dir_path)
 
     # Initialize a dictionary to group files by hostname and chunk size
@@ -262,8 +201,8 @@ function crawl(input_urls::Vector{<:AbstractString})
                 full_embeddings = RT.get_embeddings(embedder, chunks; model="text-embedding-3-large", verbose=false, cost_tracker, api_key=ENV["OPENAI_API_KEY"])
 
                 # Float32
-                fn_output = "$dir_path/packs/$hostname-textembedding3large-0-Float32__v1.0.tar.gz"
-                fn_temp = "$dir_path/packs/pack.hdf5"
+                fn_output = joinpath(dir_path, "packs", "$hostname-textembedding3large-0-Float32__v1.0.tar.gz")
+                fn_temp = joinpath(dir_path, "packs", "pack.hdf5")
                 h5open(fn_temp, "w") do file
                     file["chunks"] = chunks
                     file["sources"] = sources
@@ -280,5 +219,81 @@ function crawl(input_urls::Vector{<:AbstractString})
         end
     end
 
-    return parsed_blocks
+end
+
+
+"""
+    makeRAG(input_urls::Vector{<:AbstractString})
+
+Extracts the base url.
+
+# Arguments
+- `input_urls`: vector containing URL strings to parse
+"""
+function crawl(input_urls::Vector{<:AbstractString})
+
+    url_queue = Vector{AbstractString}(input_urls)
+    visited_url_set = Set{AbstractString}()
+    parsed_blocks = []
+    hostname_url_dict = Dict{AbstractString,Vector{AbstractString}}()
+
+    # process_paths(input_urls[1])
+    # @info "done"
+    # return
+
+    # TODO: Add parallel processing for URLs
+    while !isempty(url_queue)
+        url = url_queue[1]
+        popfirst!(url_queue)
+        base_url = get_base_url(url)
+
+        if !in(base_url, visited_url_set)
+            push!(visited_url_set, base_url)
+            if check_robots_txt("*", base_url, url_queue)
+                try
+                    get_urls!(base_url, url_queue)
+                    hostname_url_dict = process_hostname(url, hostname_url_dict)
+                catch
+                    @error "Bad URL: $base_url"
+                end
+            end
+        end
+    end
+
+
+    # Define the folder path    
+    folder_path = joinpath("RAGKit", "knowledge_packs", "packs")
+
+    # Check if the folder exists
+    if !isdir(folder_path)
+        mkpath(folder_path)
+        @info "Folder created: $folder_path"
+    else
+        @info "Folder already exists: $folder_path"
+    end
+
+
+    output_chunks = Vector{SubString{String}}()
+    output_sources = Vector{String}()
+    SAVE_CHUNKS = true
+    CHUNK_SIZE = 512
+    for (hostname, urls) in hostname_url_dict
+        for url in urls
+            try
+                chunks, sources = process_paths(url)
+                append!(output_chunks, chunks)
+                append!(output_sources, sources)
+            catch
+                @error "error!! check url: $url"
+            end
+        end
+        if SAVE_CHUNKS
+            serialize(joinpath("RAGKit", "knowledge_packs", "$(hostname)-chunks-$(CHUNK_SIZE).jls"), output_chunks)
+            serialize(joinpath("RAGKit", "knowledge_packs", "$(hostname)-sources-$(CHUNK_SIZE).jls"), output_sources)
+        end
+
+    end
+
+    make_embeddings()
+
 end
