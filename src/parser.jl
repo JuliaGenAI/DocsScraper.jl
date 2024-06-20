@@ -359,18 +359,18 @@ end
 
 
 """
-    parse_url(urls::Vector{<:AbstractString})
+    parse_url(url::AbstractString)
 
 Initiator and main function to parse HTML from url
 
 # Arguments
-- `urls`: vector containing URL strings to parse
+- `url`: URL string to parse
 
 # Returns
 - A Vector of Dict containing Heading/Text/Code along with a Dict of respective metadata
 
 # Usage
-parsed_blocks = parse_url(["https://docs.julialang.org/en/v1/base/multi-threading/"])
+parsed_blocks = parse_url("https://docs.julialang.org/en/v1/base/multi-threading/")
 
 # Example
 Let the HTML be:
@@ -394,6 +394,7 @@ Let the HTML be:
 
 Output: 
 Any[
+    Dict{String, Any}("URL" => "URL")
     Dict{String, Any}("metadata" => Dict{Any, Any}("h1" => "Heading 1"), "heading" => "Heading 1")
     Dict{String, Any}("metadata" => Dict{Any, Any}("h1" => "Heading 1", "h2" => "Heading 2"), "heading" => "Heading 2")
     Dict{String, Any}("metadata" => Dict{Any, Any}("h1" => "Heading 1", "h2" => "Heading 2"), "text" => "para 1")
@@ -405,25 +406,24 @@ Any[
     Dict{String, Any}("metadata" => Dict{Any, Any}("h1" => "Heading 1", "h2" => "Heading 2_2"), "text" => "para ewg")
 ]
 """
-function parse_url_to_blocks(urls::Vector{<:AbstractString})
+function parse_url_to_blocks(url::AbstractString)
 
-    ## TODO: Check if you need parallel processing for multiple urls
+    ## TODO: Store the parsed data to local 
 
-    parsed_blocks = Vector{Dict{String,Any}}()
-    heading_hierarchy = Dict{Symbol,Any}()
-
-    for url in urls
-        @info "Parsing URL: $url"
+    @info "Parsing URL: $url"
+    try
         base_url = get_base_url(url)
-        r = HTTP.get(base_url)
-        r_parsed = parsehtml(String(r.body))
+        fetched_content = HTTP.get(base_url)
+        parsed = Gumbo.parsehtml(String(fetched_content.body))
         # Getting title of the document 
         # title = [el
         #          for el in AbstractTrees.PreOrderDFS(r_parsed.root)
         #          if el isa HTMLElement && tag(el) == :title] .|> text |> Base.Fix2(join, " / ")
-
-
-        process_node!(get_html_content(r_parsed.root), heading_hierarchy, parsed_blocks)
+        parsed_blocks = Vector{Dict{String,Any}}([Dict("Source" => base_url)])
+        heading_hierarchy = Dict{Symbol,Any}()
+        process_node!(get_html_content(parsed.root), heading_hierarchy, parsed_blocks)
+        return parsed_blocks
+    catch
+        println("Bad URL")
     end
-    return parsed_blocks
 end
