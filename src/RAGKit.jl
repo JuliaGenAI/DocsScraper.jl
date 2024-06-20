@@ -8,6 +8,9 @@ using LinearAlgebra, Unicode, SparseArrays
 using HDF5
 using Tar
 using Inflate
+
+using SHA
+using Serialization, URIs
 # using Regex
 
 # using Robots
@@ -15,3 +18,5 @@ using Inflate
 include("parser.jl")
 include("crawl.jl")
 include("extract_urls.jl")
+include("preparation.jl")
+include("make_embeddings.jl")

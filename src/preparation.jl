@@ -54,8 +54,6 @@ function roll_up_chunks(parsed_blocks, url::AbstractString; separator::String="<
     return docs, sources
 end
 
-# Make this eay
-sources = ["url::header/header2"]
 
 struct DocParserChunker <: RT.AbstractChunker end
 """
