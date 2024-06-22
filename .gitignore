@@ -1,0 +1,4 @@
+# Ignore .env files
+.env
+knowledge_packs/
+Manifest.toml
