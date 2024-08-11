@@ -1,4 +1,4 @@
-# RAGKit
+# DocsScraper
 
 ## Documentation
 

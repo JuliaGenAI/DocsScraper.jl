@@ -1,22 +1,4 @@
 """
-Working:
-
-Since HTML structure is complex, we need to figure out when do we insert the extracted text in parsed_blocks 
-ie., should we add the text of child hierarchy and then insert or should we insert now and let the child hierarchy make another insertion.  
-For this we employ multiple checks. If the current node is heading, directly insert into parsed_blocks.
-If the current node is a code block, return the text inside code block with backticks.
-If the node is neither heading nor code, then we'll need to go deeper in the hierarchy. 
-if the current node's tag is from the list [:p, :li, :dt, :dd, :pre, :b, :strong, :i, :cite, :address, :em, :td]
-it is assumed that everything inside the tag is part of a single text block with inline code. 
-But when we go deeper and if there is a code block with size > 50 chars, then our assumption was false. 
-To correct this, we first insert the previously extracted text, next we insert the current code and additionally indicate the parent recursion iteration 
-that the current iteration has inserted the previously parsed text, so there is no need for parent iteration to insert the text block again. 
-We indicate this by a return flag is_text_inserted
-"""
-
-
-
-"""
     insert_parsed_data!(heading_hierarchy::Dict{Symbol,Any}, 
         parsed_blocks::Vector{Dict{String,Any}}, 
         text_to_insert::AbstractString, 
@@ -30,19 +12,16 @@ Insert the text into parsed_blocks Vector
 - text_to_insert: Text to be inserted
 - text_type: The text to be inserted could be heading or a code block or just text
 """
-function insert_parsed_data!(heading_hierarchy::Dict{Symbol,Any},
-    parsed_blocks::Vector{Dict{String,Any}},
-    text_to_insert::AbstractString,
-    text_type::AbstractString)
-
+function insert_parsed_data!(heading_hierarchy::Dict{Symbol, Any},
+        parsed_blocks::Vector{Dict{String, Any}},
+        text_to_insert::AbstractString,
+        text_type::AbstractString)
     if !isempty(strip(text_to_insert))
         push!(parsed_blocks,
             Dict(text_type => strip(text_to_insert),
                 "metadata" => copy(heading_hierarchy)))
     end
 end
-
-
 
 """
     process_headings!(node::Gumbo.HTMLElement,
@@ -57,13 +36,13 @@ Process headings. If the current node is heading, directly insert into parsed_bl
 - parsed_blocks: Vector of Dicts to store parsed text and metadata
 """
 function process_headings!(node::Gumbo.HTMLElement,
-    heading_hierarchy::Dict{Symbol,Any},
-    parsed_blocks::Vector{Dict{String,Any}})
-
+        heading_hierarchy::Dict{Symbol, Any},
+        parsed_blocks::Vector{Dict{String, Any}})
     tag_name = Gumbo.tag(node)
     # Clear headings of equal or lower level
     for k in collect(keys(heading_hierarchy))
-        if k != "header" && Base.parse(Int, last(string(k))) >= Base.parse(Int, last(string(tag_name)))
+        if k != "header" &&
+           Base.parse(Int, last(string(k))) >= Base.parse(Int, last(string(tag_name)))
             delete!(heading_hierarchy, k)
         end
     end
@@ -123,11 +102,10 @@ If the node is neither heading nor code
 - prev_text_buffer: IO Buffer which contains previous text
 """
 function process_generic_node!(node::Gumbo.HTMLElement,
-    heading_hierarchy::Dict{Symbol,Any},
-    parsed_blocks::Vector{Dict{String,Any}},
-    child_new::Bool=true,
-    prev_text_buffer::IO=IOBuffer(write=true))
-
+        heading_hierarchy::Dict{Symbol, Any},
+        parsed_blocks::Vector{Dict{String, Any}},
+        child_new::Bool = true,
+        prev_text_buffer::IO = IOBuffer(write = true))
     seekstart(prev_text_buffer)
     prev_text = read(prev_text_buffer, String)
 
@@ -142,10 +120,15 @@ function process_generic_node!(node::Gumbo.HTMLElement,
         # if the current tag belongs in the list, it is assumed that all the text/code should be part of a single paragraph/block, unless,
         # there occurs a code block with >50 chars, then, previously parsed text is inserted first, then the code block is inserted. 
 
-        if tag_name in [:p, :li, :dt, :dd, :pre, :b, :strong, :i, :cite, :address, :em, :td, :a, :span, :header]
-            received_text, is_code_block, is_text_inserted = process_node!(child, heading_hierarchy, parsed_blocks, false, prev_text_buffer)
+        if tag_name in [:p, :li, :dt, :dd, :pre, :b, :strong, :i,
+            :cite, :address, :em, :td, :a, :span, :header]
+            received_text, is_code_block, is_text_inserted = process_node!(
+                child, heading_hierarchy, parsed_blocks, false, prev_text_buffer)
+        elseif tag_name in [:script]
+            continue
         else
-            received_text, is_code_block, is_text_inserted = process_node!(child, heading_hierarchy, parsed_blocks, child_new, prev_text_buffer)
+            received_text, is_code_block, is_text_inserted = process_node!(
+                child, heading_hierarchy, parsed_blocks, child_new, prev_text_buffer)
         end
 
         # changing text_to_insert to "" to avoid inserting text_to_insert again (as it was inserted by the child recursion call)
@@ -180,7 +163,6 @@ function process_generic_node!(node::Gumbo.HTMLElement,
             print(prev_text_buffer, " " * received_text)
             text_to_insert = text_to_insert * " " * received_text
         end
-
     end
 
     # if child_new is false, this means new child (new entry in parsed_blocks) should not be created, hence, 
@@ -195,7 +177,8 @@ function process_generic_node!(node::Gumbo.HTMLElement,
     # if we're insert text in current node level, then we should insert the previous text if available, 
     # otherwise it'll be inserted when the control goes back to the parent call and hence, order of the insertion will be weird
     if !isempty(strip(text_to_insert))
-        insert_parsed_data!(heading_hierarchy, parsed_blocks, String(take!(prev_text_buffer)), "text")
+        insert_parsed_data!(
+            heading_hierarchy, parsed_blocks, String(take!(prev_text_buffer)), "text")
         is_text_inserted = true
     end
 
@@ -204,7 +187,6 @@ function process_generic_node!(node::Gumbo.HTMLElement,
     print(prev_text_buffer, prev_text)
     return "", is_code_block, is_text_inserted
 end
-
 
 """
     process_docstring!(node::Gumbo.HTMLElement,
@@ -224,11 +206,10 @@ Function to process node of class `docstring`
 - prev_text_buffer: IO Buffer which contains previous text
 """
 function process_docstring!(node::Gumbo.HTMLElement,
-    heading_hierarchy::Dict{Symbol,Any},
-    parsed_blocks::Vector{Dict{String,Any}},
-    child_new::Bool=true,
-    prev_text_buffer::IO=IOBuffer(write=true))
-
+        heading_hierarchy::Dict{Symbol, Any},
+        parsed_blocks::Vector{Dict{String, Any}},
+        child_new::Bool = true,
+        prev_text_buffer::IO = IOBuffer(write = true))
     seekstart(prev_text_buffer)
     prev_text = read(prev_text_buffer, String)
     is_code_block = false
@@ -248,10 +229,12 @@ function process_docstring!(node::Gumbo.HTMLElement,
     # Insert "header"
     if Gumbo.tag(children[1]) == :header
         heading_hierarchy[:docstring_header] = strip(Gumbo.text(children[1]))
-        insert_parsed_data!(heading_hierarchy, parsed_blocks, Gumbo.text(children[1]), "docstring_header")
+        insert_parsed_data!(
+            heading_hierarchy, parsed_blocks, Gumbo.text(children[1]), "docstring_header")
     end
 
-    received_text, is_code_block, is_text_inserted = process_node!(children[2], heading_hierarchy, parsed_blocks, child_new, prev_text_buffer)
+    received_text, is_code_block, is_text_inserted = process_node!(
+        children[2], heading_hierarchy, parsed_blocks, child_new, prev_text_buffer)
 
     if !isempty(strip(received_text))
         insert_parsed_data!(heading_hierarchy, parsed_blocks, received_text, "text")
@@ -279,11 +262,10 @@ Function to process a node
 - prev_text_buffer: IO Buffer which contains previous text
 """
 function process_node!(node::Gumbo.HTMLElement,
-    heading_hierarchy::Dict{Symbol,Any},
-    parsed_blocks::Vector{Dict{String,Any}},
-    child_new::Bool=true,
-    prev_text_buffer::IO=IOBuffer(write=true))
-
+        heading_hierarchy::Dict{Symbol, Any},
+        parsed_blocks::Vector{Dict{String, Any}},
+        child_new::Bool = true,
+        prev_text_buffer::IO = IOBuffer(write = true))
     tag_name = Gumbo.tag(node)
     if startswith(string(tag_name), "h") && isdigit(last(string(tag_name)))
         return process_headings!(node, heading_hierarchy, parsed_blocks)
@@ -292,14 +274,13 @@ function process_node!(node::Gumbo.HTMLElement,
         return process_code(node)
 
     elseif tag_name == :article && getattr(node, "class", "") == "docstring"
-        return process_docstring!(node, heading_hierarchy, parsed_blocks, child_new, prev_text_buffer)
-
+        return process_docstring!(
+            node, heading_hierarchy, parsed_blocks, child_new, prev_text_buffer)
     end
 
-    return process_generic_node!(node, heading_hierarchy, parsed_blocks, child_new, prev_text_buffer)
-
+    return process_generic_node!(
+        node, heading_hierarchy, parsed_blocks, child_new, prev_text_buffer)
 end
-
 
 """
 multiple dispatch for process_node!() when node is of type Gumbo.HTMLText
@@ -310,14 +291,10 @@ function process_node!(node::Gumbo.HTMLText, args...)
     return strip(Gumbo.text(node)), is_code_block, is_text_inserted
 end
 
-
 """
     get_base_url(url::AbstractString)
 
-Extracts the base url.
-
-# Arguments
-- `url`: The url string of which, the base url needs to be extracted
+Extract the base url.
 """
 function get_base_url(url::AbstractString)
     parsed_url = URIs.URI(url)
@@ -329,7 +306,7 @@ end
 """
     get_html_content(root::Gumbo.HTMLElement)
 
-Returns the main content of the HTML. If not found, returns the whole HTML to parse
+Return the main content of the HTML. If not found, return the whole HTML to parse
 
 # Arguments
 - `root`: The HTML root from which content is extracted
@@ -338,73 +315,34 @@ function get_html_content(root::Gumbo.HTMLElement)
     target_ids = Set(["VPContent", "main_content_wrap", "pages-content"])
     target_classes = Set(["content", "franklin-content"])
 
-    content_candidates = [el for el in AbstractTrees.PreOrderDFS(root) if el isa HTMLElement]
+    content_candidates = [el
+                          for el in AbstractTrees.PreOrderDFS(root) if el isa HTMLElement]
 
     # First try to find by ID
-    content_by_id = filter(el -> getattr(el, "id", nothing) in target_ids, content_candidates)
+    content_by_id = filter(
+        el -> getattr(el, "id", nothing) in target_ids, content_candidates)
     if !isempty(content_by_id)
         return only(content_by_id)
     end
 
     # Fallback to class if no ID matches
-    content_by_class = filter(el -> getattr(el, "class", nothing) in target_classes, content_candidates)
+    content_by_class = filter(
+        el -> getattr(el, "class", nothing) in target_classes, content_candidates)
     if !isempty(content_by_class)
         return only(content_by_class)
     end
 
     # Fallback to the root node if no class matches
     return root
-
 end
-
 
 """
     parse_url(url::AbstractString)
 
-Initiator and main function to parse HTML from url
+Initiator and main function to parse HTML from url. Return a Vector of Dict containing Heading/Text/Code along with a Dict of respective metadata
 
 # Arguments
 - `url`: URL string to parse
-
-# Returns
-- A Vector of Dict containing Heading/Text/Code along with a Dict of respective metadata
-
-# Usage
-parsed_blocks = parse_url("https://docs.julialang.org/en/v1/base/multi-threading/")
-
-# Example
-Let the HTML be:
-<!DOCTYPE html>
-    <html>
-    <body>
-
-    <h1>Heading 1</h1>
-        <h2>Heading 2</h2>
-            <p>para 1</p>
-            <h3>Heading 3</h3>
-                <code>this is my code block</code>
-            <h3>This is another h3 under Heading 2</h3>
-                <p>This is a paragraph with <code>inline code</code></p>
-
-        <h2>Heading 2_2</h2>
-            <p>para ewg</p>
-
-    </body>
-    </html>
-
-Output: 
-Any[
-    Dict{String, Any}("URL" => "URL")
-    Dict{String, Any}("metadata" => Dict{Any, Any}("h1" => "Heading 1"), "heading" => "Heading 1")
-    Dict{String, Any}("metadata" => Dict{Any, Any}("h1" => "Heading 1", "h2" => "Heading 2"), "heading" => "Heading 2")
-    Dict{String, Any}("metadata" => Dict{Any, Any}("h1" => "Heading 1", "h2" => "Heading 2"), "text" => "para 1")
-    Dict{String, Any}("metadata" => Dict{Any, Any}("h1" => "Heading 1", "h3" => "Heading 3", "h2" => "Heading 2"), "heading" => "Heading 3")
-    Dict{String, Any}("code" => "```julia this is my code block```", "metadata" => Dict{Any, Any}("h1" => "Heading 1", "h3" => "Heading 3", "h2" => "Heading 2"))
-    Dict{String, Any}("metadata" => Dict{Any, Any}("h1" => "Heading 1", "h3" => "This is another h3 under Heading 2", "h2" => "Heading 2"), "heading" => "This is another h3 under Heading 2")
-    Dict{String, Any}("metadata" => Dict{Any, Any}("h1" => "Heading 1", "h3" => "This is another h3 under Heading 2", "h2" => "Heading 2"), "text" => "This is a paragraph with  inline code")
-    Dict{String, Any}("metadata" => Dict{Any, Any}("h1" => "Heading 1", "h2" => "Heading 2_2"), "heading" => "Heading 2_2")
-    Dict{String, Any}("metadata" => Dict{Any, Any}("h1" => "Heading 1", "h2" => "Heading 2_2"), "text" => "para ewg")
-]
 """
 function parse_url_to_blocks(url::AbstractString)
 
@@ -419,8 +357,8 @@ function parse_url_to_blocks(url::AbstractString)
         # title = [el
         #          for el in AbstractTrees.PreOrderDFS(r_parsed.root)
         #          if el isa HTMLElement && tag(el) == :title] .|> text |> Base.Fix2(join, " / ")
-        parsed_blocks = Vector{Dict{String,Any}}([Dict("Source" => base_url)])
-        heading_hierarchy = Dict{Symbol,Any}()
+        parsed_blocks = Vector{Dict{String, Any}}([Dict("Source" => base_url)])
+        heading_hierarchy = Dict{Symbol, Any}()
         process_node!(get_html_content(parsed.root), heading_hierarchy, parsed_blocks)
         return parsed_blocks
     catch

@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-    tags: ['*']
+    tags: ["*"]
   pull_request:
   workflow_dispatch:
 concurrency:
@@ -23,9 +23,8 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          <<#VERSIONS>>
-          - '<<&.>>'
-          <</VERSIONS>>
+          - "1.10"
+          - "nightly"
         os:
           - ubuntu-latest
         arch:
@@ -52,13 +51,11 @@ jobs:
       actions: write # needed to allow julia-actions/cache to proactively delete old caches that it has created
       contents: write
       statuses: write
-      pages: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
-          version: '1'
+          version: "1"
       - uses: julia-actions/cache@v2
       - name: Configure doc environment
         shell: julia --project=docs --color=yes {0}
@@ -75,7 +72,6 @@ jobs:
         shell: julia --project=docs --color=yes {0}
         run: |
           using Documenter: DocMeta, doctest
-          using <<&PKG>>
-          DocMeta.setdocmeta!(<<&PKG>>, :DocTestSetup, :(using <<&PKG>>); recursive=true)
-          doctest(<<&PKG>>)
-  <</HAS_DOCUMENTER>>
+          using DocsScraper
+          DocMeta.setdocmeta!(DocsScraper, :DocTestSetup, :(using DocsScraper); recursive=true)
+          doctest(DocsScraper)

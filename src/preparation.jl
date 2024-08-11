@@ -1,9 +1,7 @@
-# include("recursive_splitter.jl")
-include("utils.jl")
 """
     get_header_path(d::Dict)
 
-Concatenates the h1, h2, h3 keys from the metadata of a Dict
+Concatenate the h1, h2, h3 keys from the metadata of a Dict
 
 # Examples
 ```julia
@@ -12,7 +10,7 @@ get_header_path(d)
 # Output: "Axis/Attributes/yzoomkey"
 ```
 """
-function get_header_path(d::Dict)
+function get_header_path(d::Dict{String,Any})
     metadata = get(d, "metadata", Dict{Any,Any}())
     isempty(metadata) && return nothing
     keys_ = [:h1, :h2, :h3]
@@ -21,8 +19,13 @@ function get_header_path(d::Dict)
 end
 
 
-"Roll-up chunks (that have the same header!), so we can split them later by <SEP> to get the desired length"
-function roll_up_chunks(parsed_blocks, url::AbstractString; separator::String="<SEP>")
+
+"""
+    roll_up_chunks(parsed_blocks::Vector{Dict{String,Any}}, url::AbstractString; separator::String="<SEP>")
+
+Roll-up chunks (that have the same header!), so we can split them later by <SEP> to get the desired length
+"""
+function roll_up_chunks(parsed_blocks::Vector{Dict{String,Any}}, url::AbstractString; separator::String="<SEP>")
     docs = String[]
     io = IOBuffer()
     last_header = nothing
@@ -35,7 +38,7 @@ function roll_up_chunks(parsed_blocks, url::AbstractString; separator::String="<
             str = String(take!(io))
             if !isempty(str)
                 push!(docs, str)
-                src = url * (isnothing(last_header) ? "" : "::$last_header")
+                src = url * (isnothing(last_header) ? "" : " - $last_header")
                 push!(sources, src)
             end
             last_header = header
@@ -48,7 +51,7 @@ function roll_up_chunks(parsed_blocks, url::AbstractString; separator::String="<
     str = String(take!(io))
     if !isempty(str)
         push!(docs, str)
-        src = url * (isnothing(last_header) ? "" : "::$last_header")
+        src = url * (isnothing(last_header) ? "" : " - $last_header")
         push!(sources, src)
     end
     return docs, sources
@@ -56,19 +59,23 @@ end
 
 
 struct DocParserChunker <: RT.AbstractChunker end
-"""
-    RT.get_chunks(chunker::DocParserChunker,
-    html_files::Vector{<:AbstractString};
-    sources::AbstractVector{<:AbstractString}=html_files,
-    verbose::Bool=true,
-    separators=["\n\n", ". ", "\n", " "], max_length::Int=256)
 
-Extracts chunks from HTML files, by parsing the content in the HTML, rolling up chunks by headers, and splits them by separators to get the desired length.
+"""
+    RT.get_chunks(chunker::DocParserChunker, url::AbstractString;
+        verbose::Bool=true, separators=["\n\n", ". ", "\n", " "], max_chunk_size::Int=MAX_CHUNK_SIZE)
+
+Extract chunks from HTML files, by parsing the content in the HTML, rolling up chunks by headers, 
+and splits them by separators to get the desired length.
+
+# Arguments
+- chunker: DocParserChunker
+- url: URL of the webpage to extract chunks
+- verbose: Bool to print the log
+- separators: Chunk separators
+- max_chunk_size Maximum chunk size
 """
 function RT.get_chunks(chunker::DocParserChunker, url::AbstractString;
-    verbose::Bool=true,
-    separators=["\n\n", ". ", "\n", " "], max_length::Int=256)
-
+    verbose::Bool=true, separators=["\n\n", ". ", "\n", " "], max_chunk_size::Int=MAX_CHUNK_SIZE)
 
     SEP = "<SEP>"
     sources = AbstractVector{<:AbstractString}
@@ -84,8 +91,9 @@ function RT.get_chunks(chunker::DocParserChunker, url::AbstractString;
     ## roll up chunks by SEP splitter, then remove it later
     for (doc, src) in zip(docs_, sources_)
         ## roll up chunks by SEP splitter, then remove it later
-        doc_chunks = PT.recursive_splitter(doc, [SEP, separators...]; max_length) .|>
+        doc_chunks = PT.recursive_splitter(doc, [SEP, separators...]; max_length=max_chunk_size) .|>
                      x -> replace(x, SEP => " ") .|> strip |> x -> filter(!isempty, x)
+        chunk_lengths = length.(doc_chunks)
         # skip if no chunks found
         isempty(doc_chunks) && continue
         append!(output_chunks, doc_chunks)
@@ -96,20 +104,24 @@ end
 
 
 
-"Process folders provided in `paths`. In each, take all HTML files, scrape them, chunk them and postprocess them."
-function process_paths(url::AbstractString, max_length::Int=512)
+"""
+    process_paths(url::AbstractString; max_chunk_size::Int=MAX_CHUNK_SIZE, min_chunk_size::Int=MIN_CHUNK_SIZE)
+
+Process folders provided in `paths`. In each, take all HTML files, scrape them, chunk them and postprocess them.
+"""
+function process_paths(url::AbstractString; max_chunk_size::Int=MAX_CHUNK_SIZE, min_chunk_size::Int=MIN_CHUNK_SIZE)
 
     output_chunks = Vector{SubString{String}}()
     output_sources = Vector{String}()
 
-    chunks, sources = RT.get_chunks(DocParserChunker(), url; max_length)
+    chunks, sources = RT.get_chunks(DocParserChunker(), url; max_chunk_size)
 
     append!(output_chunks, chunks)
     append!(output_sources, sources)
 
 
     @info "Scraping done: $(length(output_chunks)) chunks"
-    postprocess_chunks(output_chunks, output_sources; min_length=40, skip_code=true)
+    output_chunks, output_sources = postprocess_chunks(output_chunks, output_sources; min_chunk_size, skip_code=true)
 
     return output_chunks, output_sources
 end

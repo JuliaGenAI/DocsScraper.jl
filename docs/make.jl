@@ -1,24 +1,23 @@
-using Documenter: Documenter, makedocs, deploydocs
-using PkgTemplates: PkgTemplates
+using DocsScraper
+using Documenter
+
+DocMeta.setdocmeta!(DocsScraper, :DocTestSetup, :(using DocsScraper); recursive=true)
 
 makedocs(;
-    modules=[PkgTemplates],
-    authors="Shreyas Agrawal <48771895+splendidbug@users.noreply.github.com>",
-    repo="https://github.com/splendidbug/RAGKit",
-    sitename="RAGKit.jl",
+    modules=[DocsScraper],
+    authors="Shreyas Agrawal @splendidbug and J S @svilupp",
+    sitename="DocsScraper.jl",
     # format=Documenter.HTML(;
-    #     repolink="https://github.com/splendidbug/RAGKit",
-    #     canonical="https://juliaci.github.io/PkgTemplates.jl",
+    #     canonical="https://Shreyas Agrawal.github.io/DocsScraper.jl",
+    #     edit_link="master",
     #     assets=String[],
     # ),
     pages=[
         "Home" => "index.md",
-        "User Guide" => "user.md",
-        "Developer Guide" => "developer.md",
-        "Migrating To PkgTemplates 0.7+" => "migrating.md",
     ],
 )
 
 deploydocs(;
-    repo="https://github.com/splendidbug/RAGKit",
+    repo="github.com/Shreyas Agrawal/DocsScraper.jl",
+    devbranch="main",
 )
