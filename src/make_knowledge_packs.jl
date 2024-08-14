@@ -24,8 +24,8 @@ function create_output_folders(knowledge_pack_path::String)
 end
 
 """
-    make_chunks(hostname_url_dict::Dict{AbstractString,Vector{AbstractString}}, knowledge_pack_path::String; max_chunk_size::Int=MAX_CHUNK_SIZE,
-        min_chunk_size::Int=MIN_CHUNK_SIZE)
+    make_chunks(hostname_url_dict::Dict{AbstractString,Vector{AbstractString}}, knowledge_pack_path::String; 
+        max_chunk_size::Int=MAX_CHUNK_SIZE, min_chunk_size::Int=MIN_CHUNK_SIZE)
 
 Parse URLs from hostname_url_dict and save the chunks
 
@@ -44,7 +44,8 @@ function make_chunks(hostname_url_dict::Dict{AbstractString, Vector{AbstractStri
         output_sources = Vector{String}()
         for url in urls
             try
-                chunks, sources = process_paths(url; max_chunk_size, min_chunk_size)
+                chunks, sources = process_paths(
+                    url; max_chunk_size, min_chunk_size)
                 append!(output_chunks, chunks)
                 append!(output_sources, sources)
             catch
@@ -85,16 +86,20 @@ function l2_norm_columns(vect::AbstractVector)
 end
 
 """
-    generate_embeddings(knowledge_pack_path::String; model::AbstractString=MODEL, embedding_size::Int=EMBEDDING_SIZE)
+    generate_embeddings(knowledge_pack_path::String; model::AbstractString=MODEL, 
+        embedding_size::Int=EMBEDDING_SIZE, custom_metadata::AbstractString)
 
 Deserialize chunks and sources to generate embeddings 
 
 # Arguments
 - model: Embedding model
 - embedding_size: Embedding dimensions
+- custom_metadata: Custom metadata like ecosystem name if required
 """
-function generate_embeddings(knowledge_pack_path::String; model::AbstractString = MODEL,
-        embedding_size::Int = EMBEDDING_SIZE)
+function generate_embeddings(
+        knowledge_pack_path::String; max_chunk_size::Int = MAX_CHUNK_SIZE,
+        model::AbstractString = MODEL,
+        embedding_size::Int = EMBEDDING_SIZE, custom_metadata::AbstractString)
     embedder = RT.BatchEmbedder()
     entries = readdir(knowledge_pack_path)
     # Initialize a dictionary to group files by hostname and chunk size
@@ -114,31 +119,31 @@ function generate_embeddings(knowledge_pack_path::String; model::AbstractString 
 
         if match_chunks !== nothing
             hostname = match_chunks.captures[1]
-            chunk_size = parse(Int, match_chunks.captures[2])
+            max_chunk_size = parse(Int, match_chunks.captures[2])
             if !haskey(hostname_files, hostname)
                 hostname_files[hostname] = Dict{Int, Dict{String, String}}()
             end
-            if !haskey(hostname_files[hostname], chunk_size)
-                hostname_files[hostname][chunk_size] = Dict{String, String}()
+            if !haskey(hostname_files[hostname], max_chunk_size)
+                hostname_files[hostname][max_chunk_size] = Dict{String, String}()
             end
-            hostname_files[hostname][chunk_size]["chunks"] = joinpath(
+            hostname_files[hostname][max_chunk_size]["chunks"] = joinpath(
                 knowledge_pack_path, file)
         elseif match_sources !== nothing
             hostname = match_sources.captures[1]
-            chunk_size = parse(Int, match_sources.captures[2])
+            max_chunk_size = parse(Int, match_sources.captures[2])
             if !haskey(hostname_files, hostname)
                 hostname_files[hostname] = Dict{Int, Dict{String, String}}()
             end
-            if !haskey(hostname_files[hostname], chunk_size)
-                hostname_files[hostname][chunk_size] = Dict{String, String}()
+            if !haskey(hostname_files[hostname], max_chunk_size)
+                hostname_files[hostname][max_chunk_size] = Dict{String, String}()
             end
-            hostname_files[hostname][chunk_size]["sources"] = joinpath(
+            hostname_files[hostname][max_chunk_size]["sources"] = joinpath(
                 knowledge_pack_path, file)
         end
     end
     # Process each pair of files
     for (hostname, chunk_files) in hostname_files
-        for (chunk_size, files) in chunk_files
+        for (max_chunk_size, files) in chunk_files
             if haskey(files, "chunks") && haskey(files, "sources")
                 chunks_file = files["chunks"]
                 sources_file = files["sources"]
@@ -148,17 +153,31 @@ function generate_embeddings(knowledge_pack_path::String; model::AbstractString 
                 full_embeddings = RT.get_embeddings(
                     embedder, chunks; model, verbose = false, cost_tracker)
                 @info "Created embeddings for $hostname. Cost: \$$(round(cost_tracker[], digits=3))"
+
+                trunc = embedding_size < EMBEDDING_SIZE ? 1 : 0
                 fn_output = joinpath(knowledge_pack_path, "packs",
-                    "$hostname-textembedding3large-0-Float32__v1.0.tar.gz")
+                    "$hostname-$model-$trunc-Float32__v1.0.tar.gz")
                 fn_temp = joinpath(knowledge_pack_path, "packs",
-                    "$hostname-textembedding3large-0-Float32__v1.0.hdf5")
+                    "$hostname-$model-$trunc-Float32__v1.0.hdf5")
+
                 h5open(fn_temp, "w") do file
                     file["chunks"] = chunks
                     file["sources"] = sources
                     file["embeddings"] = full_embeddings[1:embedding_size, :] |>
                                          l2_norm_columns |> x -> map(>(0), x)
                     file["type"] = "ChunkIndex"
-                    # file["metadata"] = "$hostname ecosystem docstrings, chunk size $chunk_size, downloaded on 20240330, contains: Makie.jl, AlgebraOfGraphics.jl, GeoMakie.jl, GraphMakie.jl, MakieThemes.jl, TopoPlots.jl, Tyler.jl"
+
+                    package_url_dict = Dict{String, Vector{String}}()
+                    package_url_dict = urls_for_metadata(sources)
+
+                    metadata = Dict(
+                        :embedded_dt => Dates.today(),
+                        :custom_metadata => custom_metadata, :max_chunk_size => max_chunk_size,
+                        :embedding_size => embedding_size, :model => model,
+                        :packages => package_url_dict)
+
+                    metadata_json = JSON.json(metadata)
+                    file["metadata"] = metadata_json
                 end
 
                 command = `tar -cvzf $fn_output -C $(dirname(fn_temp)) $(basename(fn_temp))`
@@ -166,7 +185,7 @@ function generate_embeddings(knowledge_pack_path::String; model::AbstractString 
                 report_artifact(fn_output)
 
             else
-                @warn "Missing pair for hostname: $hostname, chunk size: $chunk_size"
+                @warn "Missing pair for hostname: $hostname, max chunk size: $max_chunk_size"
             end
         end
     end
@@ -174,7 +193,8 @@ end
 
 """
     make_knowledge_packs(crawlable_urls::Vector{<:AbstractString}=String[]; single_urls::Vector{<:AbstractString}=String[],
-        max_chunk_size::Int=MAX_CHUNK_SIZE, min_chunk_size::Int=MIN_CHUNK_SIZE, model::AbstractString=MODEL, embedding_size::Int=EMBEDDING_SIZE)
+        max_chunk_size::Int=MAX_CHUNK_SIZE, min_chunk_size::Int=MIN_CHUNK_SIZE, model::AbstractString=MODEL, embedding_size::Int=EMBEDDING_SIZE, 
+        custom_metadata::AbstractString)
 
 Entry point to crawl, parse and generate embeddings
 
@@ -185,11 +205,12 @@ Entry point to crawl, parse and generate embeddings
 - min_chunk_size: Minimum chunk size
 - model: Embedding model
 - embedding_size: Embedding dimensions
+- custom_metadata: Custom metadata like ecosystem name if required
 """
 function make_knowledge_packs(crawlable_urls::Vector{<:AbstractString} = String[];
         single_urls::Vector{<:AbstractString} = String[],
         max_chunk_size::Int = MAX_CHUNK_SIZE, min_chunk_size::Int = MIN_CHUNK_SIZE,
-        model::AbstractString = MODEL, embedding_size::Int = EMBEDDING_SIZE)
+        model::AbstractString = MODEL, embedding_size::Int = EMBEDDING_SIZE, custom_metadata::AbstractString = "")
     if isempty(crawlable_urls) && isempty(single_urls)
         error("At least one of `input_urls` or `single_pages` must be provided.")
     end
@@ -217,6 +238,8 @@ function make_knowledge_packs(crawlable_urls::Vector{<:AbstractString} = String[
     end
     knowledge_pack_path = joinpath(@__DIR__, "..", "knowledge_packs")
     create_output_folders(knowledge_pack_path)
-    make_chunks(hostname_url_dict, knowledge_pack_path; max_chunk_size, min_chunk_size)
-    generate_embeddings(knowledge_pack_path; model, embedding_size)
+    make_chunks(
+        hostname_url_dict, knowledge_pack_path; max_chunk_size, min_chunk_size)
+    generate_embeddings(
+        knowledge_pack_path; max_chunk_size, model, embedding_size, custom_metadata)
 end

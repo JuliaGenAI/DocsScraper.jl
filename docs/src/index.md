@@ -1,4 +1,8 @@
-# DocsScraper
+# Reference
 
-## Documentation
+```@index
+```
 
+```@autodocs
+Modules = [DocsScraper]
+```

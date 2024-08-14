@@ -340,9 +340,6 @@ end
     parse_url(url::AbstractString)
 
 Initiator and main function to parse HTML from url. Return a Vector of Dict containing Heading/Text/Code along with a Dict of respective metadata
-
-# Arguments
-- `url`: URL string to parse
 """
 function parse_url_to_blocks(url::AbstractString)
 
@@ -356,7 +353,7 @@ function parse_url_to_blocks(url::AbstractString)
         # Getting title of the document 
         # title = [el
         #          for el in AbstractTrees.PreOrderDFS(r_parsed.root)
-        #          if el isa HTMLElement && tag(el) == :title] .|> text |> Base.Fix2(join, " / ")
+        #          if el isa HTMLElement && tag(el) == :title] .|> text |> Base.Fix2(join, " / ")    
         parsed_blocks = Vector{Dict{String, Any}}([Dict("Source" => base_url)])
         heading_hierarchy = Dict{Symbol, Any}()
         process_node!(get_html_content(parsed.root), heading_hierarchy, parsed_blocks)
