@@ -2,3 +2,8 @@
 .env
 knowledge_packs/
 Manifest.toml
+/Manifest.toml
+/docs/Manifest.toml
+/docs/build/
+.vscode/**
+**/.DS_Store

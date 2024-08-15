@@ -1,31 +1,37 @@
-# Temporary until I find a package to simplify this
+"""
+    resolve_url(base_url::String, extracted_url::String)
 
-function resolve_url(base_url::String, relative_url::String)::String
+Check the extracted URL with the original URL. Return empty String if the extracted URL belongs to a different domain. 
+Return complete URL if there's a directory traversal paths or the extracted URL belongs to the same domain as the base_url
+
+# Arguments
+- base_url: URL of the page from which other URLs are being extracted
+- extracted_url: URL extracted from the base_url  
+"""
+function resolve_url(base_url::String, extracted_url::String)
     base_uri = URI(base_url)
-    relative_uri = URI(relative_url)
-
-    ## TODO: Make a list of allowed URLs which would contain Julia docs hostnames
+    extracted_uri = URI(extracted_url)
     ## TODO: Look for version number either on the bottom left dropdown or identify on the url
 
-    if length(relative_url) > 4 && relative_url[1:4] == "http"
-        if base_uri.host == relative_uri.host
-            return relative_url
+    if length(extracted_url) > 4 && extracted_url[1:4] == "http"
+        if base_uri.host == extracted_uri.host
+            return extracted_url
         end
         return ""
     end
-    if !isempty(relative_url) && relative_url[1] == '#'
+    if !isempty(extracted_url) && extracted_url[1] == '#'
         return ""
     end
 
-    if !isempty(relative_uri.path) && relative_uri.path[1] == '/'
+    if !isempty(extracted_uri.path) && extracted_uri.path[1] == '/'
         resolved_uri = URI(
-            scheme=base_uri.scheme,
-            userinfo=base_uri.userinfo,
-            host=base_uri.host,
-            port=base_uri.port,
-            path=relative_uri.path,
-            query=relative_uri.query,
-            fragment=relative_uri.fragment
+            scheme = base_uri.scheme,
+            userinfo = base_uri.userinfo,
+            host = base_uri.host,
+            port = base_uri.port,
+            path = extracted_uri.path,
+            query = extracted_uri.query,
+            fragment = extracted_uri.fragment
         )
         return string(resolved_uri)
     end
@@ -34,11 +40,11 @@ function resolve_url(base_url::String, relative_url::String)::String
     base_segments = split(base_uri.path, "/")
     base_segments = filter((i) -> i != "", base_segments)
 
-    relative_segments = split(relative_uri.path, "/")
-    relative_segments = filter((i) -> i != "", relative_segments)
+    extracted_segments = split(extracted_uri.path, "/")
+    extracted_segments = filter((i) -> i != "", extracted_segments)
 
-    # Process the relative segments
-    for segment in relative_segments
+    # Process the directory traversal paths
+    for segment in extracted_segments
         if segment == ".."
             if !isempty(base_segments)
                 pop!(base_segments)
@@ -53,31 +59,29 @@ function resolve_url(base_url::String, relative_url::String)::String
 
     # Create the resolved URI
     resolved_uri = URI(
-        scheme=base_uri.scheme,
-        userinfo=base_uri.userinfo,
-        host=base_uri.host,
-        port=base_uri.port,
-        path=resolved_path,
-        query=relative_uri.query,
-        fragment=relative_uri.fragment
+        scheme = base_uri.scheme,
+        userinfo = base_uri.userinfo,
+        host = base_uri.host,
+        port = base_uri.port,
+        path = resolved_path,
+        query = extracted_uri.query,
+        fragment = extracted_uri.fragment
     )
     return string(resolved_uri)
 end
 
-
 """
-    find_urls!(url::AbstractString, 
-        node::Gumbo.HTMLElement, 
-        url_queue::Vector{<:AbstractString}
+    find_urls_html!(url::AbstractString, node::Gumbo.HTMLElement, url_queue::Vector{<:AbstractString}
 
-Function to recursively find <a> and extract the urls
+Function to recursively find <a> tags and extract the urls
 
 # Arguments
 - url: The initial input URL 
 - node: The HTML node of type Gumbo.HTMLElement
 - url_queue: Vector in which extracted URLs will be appended
 """
-function find_urls_html!(url::AbstractString, node::Gumbo.HTMLElement, url_queue::Vector{<:AbstractString})
+function find_urls_html!(
+        url::AbstractString, node::Gumbo.HTMLElement, url_queue::Vector{<:AbstractString})
     if Gumbo.tag(node) == :a && haskey(node.attributes, "href")
         href = node.attributes["href"]
         if href !== nothing && !isempty(resolve_url(url, href))
@@ -85,6 +89,7 @@ function find_urls_html!(url::AbstractString, node::Gumbo.HTMLElement, url_queue
         end
     end
 
+    # Go deep in the HTML tags and check if `node` is an <a> tag
     for child in node.children
         if isa(child, HTMLElement)
             find_urls_html!(url, child, url_queue)
@@ -92,9 +97,18 @@ function find_urls_html!(url::AbstractString, node::Gumbo.HTMLElement, url_queue
     end
 end
 
+"""
+    find_urls_xml!(url::AbstractString, url_queue::Vector{<:AbstractString})
 
+Identify URL through regex pattern in xml files and push in `url_queue`
 
+# Arguments
+- url: url from which all other URLs will be extracted
+- url_queue: Vector in which extracted URLs will be appended
+"""
 function find_urls_xml!(url::AbstractString, url_queue::Vector{<:AbstractString})
+    # If a string starts with "http" then it is considered as a URL regardless of it being valid. 
+    # Validity of URLs are checked during HTTP fetch
     try
         fetched_content = HTTP.get(url)
         xml_content = String(fetched_content.body)
@@ -108,32 +122,23 @@ function find_urls_xml!(url::AbstractString, url_queue::Vector{<:AbstractString}
     end
 end
 
-
-
 """
     get_links!(url::AbstractString, 
         url_queue::Vector{<:AbstractString})
 
-Function to extract urls inside <a> tags
+Extract urls inside html or xml files 
 
 # Arguments
 - url: url from which all other URLs will be extracted
 - url_queue: Vector in which extracted URLs will be appended
 """
 function get_urls!(url::AbstractString, url_queue::Vector{<:AbstractString})
-
     @info "Scraping link: $url"
-    # println(url)
-    # try
     fetched_content = HTTP.get(url)
     parsed = Gumbo.parsehtml(String(fetched_content.body))
-    if (url[end-3:end] == ".xml")
+    if (url[(end - 3):end] == ".xml")
         find_urls_xml!(url_xml, url_queue)
     else
         find_urls_html!(url, parsed.root, url_queue)
     end
-    # print("-------------")
-    # catch e
-    #     println("Bad URL: $url")
-    # end
 end

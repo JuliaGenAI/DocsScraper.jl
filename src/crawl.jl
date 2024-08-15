@@ -2,13 +2,10 @@
 """
     parse_robots_txt!(robots_txt::String)
 
-Parses the robots.txt string and returns rules along with the URLs on Sitemap
-
-# Arguments
-- `robots_txt`: robots.txt as a string
+Parse the robots.txt string and return rules and the URLs on Sitemap
 """
 function parse_robots_txt!(robots_txt::String)
-    rules = Dict{String,Dict{String,Vector{String}}}()
+    rules = Dict{String, Dict{String, Vector{String}}}()
     current_user_agent = ""
     sitemap_urls = Vector{AbstractString}()
 
@@ -17,7 +14,8 @@ function parse_robots_txt!(robots_txt::String)
         if startswith(line, "User-agent:")
             current_user_agent = strip(split(line, ":")[2])
             if !haskey(rules, current_user_agent)
-                rules[current_user_agent] = Dict("Disallow" => Vector{String}(), "Allow" => Vector{String}())
+                rules[current_user_agent] = Dict(
+                    "Disallow" => Vector{String}(), "Allow" => Vector{String}())
             end
         elseif startswith(line, "Disallow:")
             disallow_path = strip(split(line, ":")[2])
@@ -33,24 +31,20 @@ function parse_robots_txt!(robots_txt::String)
             url = strip(split(line, ":")[2])
             push!(sitemap_urls, url)
         end
-
     end
     return rules, sitemap_urls
 end
 
-
 """
-    check_robots_txt(user_agent::AbstractString,
-        url::AbstractString)
+    check_robots_txt(user_agent::AbstractString, url::AbstractString)
 
-Checks the robots.txt of a URL and returns a boolean representing if `user_agent` is allowed to crawl the input url
+Check robots.txt of a URL and return a boolean representing if `user_agent` is allowed to crawl the input url, along with sitemap urls
 
 # Arguments
 - `user_agent`: user agent attempting to crawl the webpage
 - `url`: input URL string
 """
-function check_robots_txt(user_agent::AbstractString,
-    url::AbstractString)
+function check_robots_txt(user_agent::AbstractString, url::AbstractString)
 
     ## TODO: Make a cache of rules for a quick lookup
     # if (haskey(restricted_urls, url))
@@ -101,27 +95,19 @@ end
 """
     get_base_url(url::AbstractString)
 
-Extracts the base url.
-
-# Arguments
-- `url`: The url string of which, the base url needs to be extracted
+Extract the base url
 """
 function get_base_url(url::AbstractString)
-
     parsed_url = URIs.URI(url)
     base_url = string(parsed_url.scheme, "://", parsed_url.host,
         parsed_url.port != nothing ? "" * string(parsed_url.port) : "", parsed_url.path)
     return base_url
 end
 
-
 """
     process_hostname(url::AbstractString)
 
-Returns the hostname of an input URL
-
-# Arguments
-- `url`: URL string
+Return the hostname of an input URL
 """
 function process_hostname(url::AbstractString)
     URI = URIs.URI(url)
@@ -129,17 +115,17 @@ function process_hostname(url::AbstractString)
     return hostname
 end
 
-
 """
     process_hostname(url::AbstractString, hostname_dict::Dict{AbstractString,Vector{AbstractString}})
 
-Adds the `url` to it's hostname in `hostname_dict`
+Add `url` to its hostname in `hostname_dict`
 
 # Arguments
 - `url`: URL string
 - `hostname_dict`: Dict with key being hostname and value being a vector of URLs
 """
-function process_hostname!(url::AbstractString, hostname_dict::Dict{AbstractString,Vector{AbstractString}})
+function process_hostname!(
+        url::AbstractString, hostname_dict::Dict{AbstractString, Vector{AbstractString}})
     hostname = process_hostname(url)
 
     # Add the URL to the dictionary under its hostname
@@ -150,20 +136,15 @@ function process_hostname!(url::AbstractString, hostname_dict::Dict{AbstractStri
     end
 end
 
-
 """
     crawl(input_urls::Vector{<:AbstractString})
 
-Crawls on the input URLs and returns a `hostname_url_dict` which is a dictionary with key being hostnames and the values being the URLs
-
-# Arguments
-- `input_urls`: A vector of input URLs
+Crawl on the input URLs and return a `hostname_url_dict` which is a dictionary with key being hostnames and the values being the URLs
 """
 function crawl(input_urls::Vector{<:AbstractString})
-
     url_queue = Vector{AbstractString}(input_urls)
     visited_url_set = Set{AbstractString}()
-    hostname_url_dict = Dict{AbstractString,Vector{AbstractString}}()
+    hostname_url_dict = Dict{AbstractString, Vector{AbstractString}}()
     sitemap_urls = Vector{AbstractString}()
 
     # TODO: Add parallel processing for URLs
@@ -187,6 +168,5 @@ function crawl(input_urls::Vector{<:AbstractString})
         end
     end
 
-    return hostname_url_dict
-
+    return hostname_url_dict, visited_url_set
 end
