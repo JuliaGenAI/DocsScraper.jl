@@ -90,6 +90,7 @@ end
 Deserialize chunks and sources to generate embeddings 
 Note: We highly recommend to pass `index_name`. This will be the name of the generated index. Default: date-randomInt
 
+
 # Arguments
 - model: Embedding model
 - embedding_size: Embedding dimensions
@@ -145,6 +146,7 @@ function generate_embeddings(
     sources = Vector{String}()
 
     # Add chunks and sources to vectors from each of the scraped file
+
     for (hostname, chunk_files) in hostname_files
         for (max_chunk_size, files) in chunk_files
             if haskey(files, "chunks") && haskey(files, "sources")
@@ -152,6 +154,7 @@ function generate_embeddings(
                 sources_file = files["sources"]
                 append!(chunks, deserialize(chunks_file))
                 append!(sources, deserialize(sources_file))
+
             else
                 @warn "Missing pair for hostname: $hostname, max chunk size: $max_chunk_size"
             end
@@ -266,4 +269,5 @@ function make_knowledge_packs(crawlable_urls::Vector{<:AbstractString} = String[
     generate_embeddings(
         knowledge_pack_path; max_chunk_size, model, embedding_size,
         custom_metadata, bool_embeddings, index_name)
+
 end
