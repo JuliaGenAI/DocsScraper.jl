@@ -1,4 +1,6 @@
 ## DocsScraper: "A document scraping and parsing tool used to create a custom RAG database for AIHelpMe.jl"
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://splendidbug.github.io/DocsScraper.jl/dev/) [![Build Status](https://github.com/splendidbug/DocsScraper.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/splendidbug/DocsScraper.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Aqua](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
+
 
 This tool is used to collect and parse Julia's extensive documentation.
 
