@@ -83,6 +83,15 @@ function l2_norm_columns(vect::AbstractVector)
 end
 
 """
+    remove_dashes(text::AbstractString)
+
+removes all dashes ('-') from a given string
+"""
+function process_text(text::AbstractString)
+    return replace(lowercase(text), "-" => "", "_" => "")
+end
+
+"""
     generate_embeddings(knowledge_pack_path::String; model::AbstractString=MODEL, 
         embedding_size::Int=EMBEDDING_SIZE, custom_metadata::AbstractString,
         bool_embeddings::Bool = true, index_name::AbstractString = "")
@@ -160,34 +169,34 @@ function generate_embeddings(
             end
         end
     end
+    index_name = process_text(index_name)
 
     # Generate embeddings
     cost_tracker = Threads.Atomic{Float64}(0.0)
     full_embeddings = RT.get_embeddings(
         embedder, chunks; model, verbose = false, cost_tracker)
+    @info "Created embeddings for $index_name. Cost: \$$(round(cost_tracker[], digits=3))"
 
     full_embeddings = full_embeddings[1:embedding_size, :] |>
                       l2_norm_columns
-
     if bool_embeddings
         full_embeddings = map(>(0), full_embeddings)
     end
 
-    if isempty(index_name)
-        rand_int = rand(1000:100000)
-        date = Dates.today()
-        index_name = "$(date)-$(rand_int)"
-    end
-
-    @info "Created embeddings for $index_name. Cost: \$$(round(cost_tracker[], digits=3))"
-
     trunc = embedding_size < EMBEDDING_SIZE ? 1 : 0
     emb_data_type = bool_embeddings ? "Bool" : "Float32"
+    date = Dates.today()
+    date_string = Dates.format(Dates.today(), "yyyymmdd")
 
+    if isempty(index_name)
+        index_name = "$(gensym("index"))"
+    end
+
+    file_name = "$(index_name)__v$(date_string)__$(process_text(model))-$(embedding_size)-$(emb_data_type)__v1.0"
     fn_output = joinpath(knowledge_pack_path, "packs",
-        "$index_name-$model-$trunc-$(emb_data_type)__v1.0.tar.gz")
+        "$(file_name).tar.gz")
     fn_temp = joinpath(knowledge_pack_path, "packs",
-        "$index_name-$model-$trunc-$(emb_data_type)__v1.0.hdf5")
+        "$(file_name).hdf5")
 
     h5open(fn_temp, "w") do file
         file["chunks"] = chunks
@@ -269,5 +278,4 @@ function make_knowledge_packs(crawlable_urls::Vector{<:AbstractString} = String[
     generate_embeddings(
         knowledge_pack_path; max_chunk_size, model, embedding_size,
         custom_metadata, bool_embeddings, index_name)
-
 end

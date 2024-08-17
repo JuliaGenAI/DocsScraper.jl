@@ -20,5 +20,6 @@ makedocs(;
 
 deploydocs(;
     repo = "github.com/splendidbug/DocsScraper.jl",
-    devbranch = "main"
+    devbranch = "main",
+    branch = "gh-pages"
 )
