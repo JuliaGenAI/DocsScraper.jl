@@ -13,7 +13,6 @@ using SHA
 using Serialization, URIs
 using Dates
 using JSON
-using Random
 
 include("parser.jl")
 include("crawl.jl")
