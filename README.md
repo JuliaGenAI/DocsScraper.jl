@@ -47,6 +47,7 @@ a sciml__v20240817__textembedding3large-1024-Bool__v1.0.hdf5
 └   bytes2hex(open(sha256, fn_output)) = "58bec6dd9877d1b926c96fceb6aacfe5ef6395e57174d9043ccf18560d7b49bb"
 ┌ Info: git-tree-sha1: 
 └   Tar.tree_hash(IOBuffer(inflate_gzip(fn_output))) = "031c3f51fd283e89f294b3ce9255561cc866b71a"```
+```
 `make_knowledge_packs` is the entry point to the package. This function takes in the URLs to parse and returns the index. This index can be passed to AIHelpMe.jl to answer queries on the built knowledge packs.
 
 **Using the created index:**
