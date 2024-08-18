@@ -13,9 +13,8 @@ makedocs(;
         canonical = "https://splendidbug.github.io/DocsScraper.jl",
         edit_link = "main",
         assets = String[]),
-    pages = [
-        "API Index" => "index.md"
-    ]
+    pages = ["Home" => "home.md",
+        "API Reference" => "index.md"]
 )
 
 deploydocs(;
