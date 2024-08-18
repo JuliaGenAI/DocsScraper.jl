@@ -220,6 +220,8 @@ function generate_embeddings(
     command = `tar -cvzf $fn_output -C $(dirname(fn_temp)) $(basename(fn_temp))`
     run(command)
     report_artifact(fn_output)
+
+    return fn_output
 end
 
 """
@@ -275,7 +277,8 @@ function make_knowledge_packs(crawlable_urls::Vector{<:AbstractString} = String[
     create_output_folders(knowledge_pack_path)
     make_chunks(
         hostname_url_dict, knowledge_pack_path; max_chunk_size, min_chunk_size)
-    generate_embeddings(
+    index = generate_embeddings(
         knowledge_pack_path; max_chunk_size, model, embedding_size,
         custom_metadata, bool_embeddings, index_name)
+    return index
 end
