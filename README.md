@@ -51,7 +51,7 @@ a sciml__v20240817__textembedding3large-1024-Bool__v1.0.hdf5
 `make_knowledge_packs` is the entry point to the package. This function takes in the URLs to parse and returns the index. This index can be passed to AIHelpMe.jl to answer queries on the built knowledge packs.
 
 **Using the created index:**
-```
+```julia
 using AIHelpMe
 sciml_index = AIHelpMe.load_index!(index)
 aihelp(sciml_index, "what is Sciml")
