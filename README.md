@@ -32,7 +32,7 @@ Pkg.add("DocsScraper")
 
 ## Building the Index
 ```julia
-index = make_knowledge_packs(; single_urls=["https://docs.sciml.ai/Overview/stable/"], index_name="sciml", embedding_size=1024)
+index = make_knowledge_packs(["https://docs.sciml.ai/Overview/stable/"]; index_name="sciml", embedding_size=1024, bool_embeddings=true)
 ```
 ```
 [ Info: robots.txt unavailable for https://docs.sciml.ai:/Overview/stable/
@@ -52,6 +52,12 @@ a sciml__v20240817__textembedding3large-1024-Bool__v1.0.hdf5
 ```
 `make_knowledge_packs` is the entry point to the package. This function takes in the URLs to parse and returns the index. This index can be passed to AIHelpMe.jl to answer queries on the built knowledge packs.
 
+**Default `make_knowledge_packs` Parameters:** 
+- Default embedding type is Float32. Change to boolean by the optional parameter: `bool_embeddings = true`.
+- Default embedding size is 3072. Change to custom size by the optional parameter: `embedding_size = custom_dimension`.
+- Default model being used is OpenAI's text-embedding-3-large.
+- Default max chunk size is 384 and min chunk size is 40. Change by the optional parameters: `max_chunk_size = custom_max_size` and `min_chunk_size = custom_min_size`.
+  
 ## Using the Index for Questions
 
 ```julia
