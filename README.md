@@ -48,7 +48,7 @@ a sciml__v20240817__textembedding3large-1024-Bool__v1.0.hdf5
 ┌ Info: sha256: 
 └   bytes2hex(open(sha256, fn_output)) = "58bec6dd9877d1b926c96fceb6aacfe5ef6395e57174d9043ccf18560d7b49bb"
 ┌ Info: git-tree-sha1: 
-└   Tar.tree_hash(IOBuffer(inflate_gzip(fn_output))) = "031c3f51fd283e89f294b3ce9255561cc866b71a"```
+└   Tar.tree_hash(IOBuffer(inflate_gzip(fn_output))) = "031c3f51fd283e89f294b3ce9255561cc866b71a"
 ```
 `make_knowledge_packs` is the entry point to the package. This function takes in the URLs to parse and returns the index. This index can be passed to AIHelpMe.jl to answer queries on the built knowledge packs.
 
@@ -57,6 +57,9 @@ a sciml__v20240817__textembedding3large-1024-Bool__v1.0.hdf5
 - Default embedding size is 3072. Change to custom size by the optional parameter: `embedding_size = custom_dimension`.
 - Default model being used is OpenAI's text-embedding-3-large.
 - Default max chunk size is 384 and min chunk size is 40. Change by the optional parameters: `max_chunk_size = custom_max_size` and `min_chunk_size = custom_min_size`.
+
+**Note:** For everyday use, embedding size = 1024 and embedding type = Bool is sufficient. This is compatible with AIHelpMe's `:bronze` and `:silver` pipelines (`update_pipeline(:bronze)`). For better results use embedding size = 3072 and embedding type = Float32. This requires the use of `:gold` pipeline (see more `?RAG_CONFIGURATIONS`)
+
   
 ## Using the Index for Questions
 
