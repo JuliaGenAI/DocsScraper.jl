@@ -160,3 +160,26 @@ function urls_for_metadata(sources::Vector{String})
     end
     return package_url_dict
 end
+
+## TODO: add docstring
+function create_URL_map(sources, output_file_path, index_name)
+    output_file_path = joinpath(output_file_path, "$(index_name)_URL_mapping.csv")
+    @info "Saving source URLS in $output_file_path"
+
+    urls = [split(source, " -")[1] for source in sources]
+
+    cleaned_urls = [endswith(String(url), "/") ? String(url)[1:(end - 1)] : String(url)
+                    for url in urls]
+    unique_urls = unique(cleaned_urls)
+    sorted_urls = sort(unique_urls)
+
+    package_names = Vector{String}()
+
+    for url in sorted_urls
+        push!(package_names, get_package_name(String(url)))
+    end
+
+    df = DataFrame(PackageName = package_names, URL = sorted_urls)
+
+    CSV.write(output_file_path, df)
+end
