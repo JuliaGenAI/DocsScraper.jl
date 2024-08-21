@@ -161,8 +161,18 @@ function urls_for_metadata(sources::Vector{String})
     return package_url_dict
 end
 
-## TODO: add docstring
-function create_URL_map(sources, output_file_path, index_name)
+"""
+    create_URL_map(sources::Vector{String}, output_file_path::AbstractString, index_name::AbstractString)
+
+Creates a CSV file containing the URL along with the estimated package name 
+
+# Arguments
+- sources: List of scraped sources
+- output_file_path: Path to the directory in which the csv will be created
+- index_name: Name of the created index 
+"""
+function create_URL_map(sources::Vector{String}, output_file_path::AbstractString,
+        index_name::AbstractString)
     output_file_path = joinpath(output_file_path, "$(index_name)_URL_mapping.csv")
     @info "Saving source URLS in $output_file_path"
 

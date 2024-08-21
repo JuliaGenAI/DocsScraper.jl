@@ -1,0 +1,3 @@
+ARTIFACT: "juliadata__v20240821__textembedding3large-1024-Bool__v1.0.tar.gz"
+sha256: "de477b7199d5ad96720d58fc7f13745c27f2ae8a5bf370a262716dcdd53b476d"
+git-tree-sha1: "9483ef69048953bbf3263d6eed3848f04773c13a"
