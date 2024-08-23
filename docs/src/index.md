@@ -34,7 +34,7 @@ crawlable_urls = ["https://juliagenai.github.io/DocsScraper.jl/dev/home/"]
 index_path = make_knowledge_packs(crawlable_urls;
     index_name = "docsscraper", embedding_dimension = 1024, embedding_bool = true), target_path=joinpath(pwd(), "knowledge_packs")
 ```
-```
+```julia
 [ Info: robots.txt unavailable for https://juliagenai.github.io:/DocsScraper.jl/dev/home/
 [ Info: Scraping link: https://juliagenai.github.io:/DocsScraper.jl/dev/home/
 [ Info: robots.txt unavailable for https://juliagenai.github.io:/DocsScraper.jl/dev
@@ -79,7 +79,7 @@ AIHelpMe.load_index!(index_path)
 
 pprint(aihelp("what is DocsScraper.jl?"))
 ```
-```
+```julia
 [ Info: Updated RAG pipeline to `:bronze` (Configuration key: "textembedding3large-1024-Bool").
 [ Info: Loaded index from packs: julia into MAIN_INDEX
 [ Info: Loading index from Julia\DocsScraper.jl\docsscraper\Index\docsscraper__v20240823__textembedding3large-1024-Bool__v1.0.hdf5
