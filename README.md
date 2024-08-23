@@ -32,29 +32,37 @@ Pkg.add("DocsScraper")
 
 ## Building the Index
 ```julia
-index = make_knowledge_packs(["https://docs.sciml.ai/Overview/stable/"]; index_name="sciml", embedding_size=1024, bool_embeddings=true)
+crawlable_urls = ["https://juliagenai.github.io/DocsScraper.jl/dev/home/"]
+
+index_path = make_knowledge_packs(crawlable_urls;
+    index_name = "docsscraper", embedding_dimension = 1024, embedding_bool = true), target_path=joinpath(pwd(), "knowledge_packs")
 ```
 ```
-[ Info: robots.txt unavailable for https://docs.sciml.ai:/Overview/stable/
-[ Info: Processing https://docs.sciml.ai/Overview/stable/...
+[ Info: robots.txt unavailable for https://juliagenai.github.io:/DocsScraper.jl/dev/home/
+[ Info: Scraping link: https://juliagenai.github.io:/DocsScraper.jl/dev/home/
+[ Info: robots.txt unavailable for https://juliagenai.github.io:/DocsScraper.jl/dev
+[ Info: Scraping link: https://juliagenai.github.io:/DocsScraper.jl/dev
 . . .
-[ Info: Parsing URL: https://docs.sciml.ai/Overview/stable/
-[ Info: Scraping done: 69 chunks
+[ Info: Processing https://juliagenai.github.io:/DocsScraper.jl/dev...
+[ Info: Parsing URL: https://juliagenai.github.io:/DocsScraper.jl/dev
+[ Info: Scraping done: 44 chunks
 [ Info: Removed 0 short chunks
-[ Info: Removed 0 duplicate chunks
-[ Info: Created embeddings for sciml. Cost: $0.001
-a sciml__v20240817__textembedding3large-1024-Bool__v1.0.hdf5
-[ Info: ARTIFACT: sciml__v20240817__textembedding3large-1024-Bool__v1.0.tar.gz
-┌ Info: sha256: 
-└   bytes2hex(open(sha256, fn_output)) = "58bec6dd9877d1b926c96fceb6aacfe5ef6395e57174d9043ccf18560d7b49bb"
-┌ Info: git-tree-sha1: 
-└   Tar.tree_hash(IOBuffer(inflate_gzip(fn_output))) = "031c3f51fd283e89f294b3ce9255561cc866b71a"
+[ Info: Removed 1 duplicate chunks
+[ Info: Created embeddings for docsscraper. Cost: $0.001
+a docsscraper__v20240823__textembedding3large-1024-Bool__v1.0.hdf5
+[ Info: ARTIFACT: docsscraper__v20240823__textembedding3large-1024-Bool__v1.0.tar.gz
+┌ Info: sha256:
+└   sha = "977c2b9d9fe30bebea3b6db124b733d29b7762a8f82c9bd642751f37ad27ee2e"
+┌ Info: git-tree-sha1:
+└   git_tree_sha = "eca409c0a32ed506fbd8125887b96987e9fb91d2"
+[ Info: Saving source URLS in Julia\knowledge_packs\docsscraper\docsscraper_URL_mapping.csv      
+"Julia\\knowledge_packs\\docsscraper\\Index\\docsscraper__v20240823__textembedding3large-1024-Bool__v1.0.hdf5"
 ```
 `make_knowledge_packs` is the entry point to the package. This function takes in the URLs to parse and returns the index. This index can be passed to AIHelpMe.jl to answer queries on the built knowledge packs.
 
 **Default `make_knowledge_packs` Parameters:** 
-- Default embedding type is Float32. Change to boolean by the optional parameter: `bool_embeddings = true`.
-- Default embedding size is 3072. Change to custom size by the optional parameter: `embedding_size = custom_dimension`.
+- Default embedding type is Float32. Change to boolean by the optional parameter: `embedding_bool = true`.
+- Default embedding size is 3072. Change to custom size by the optional parameter: `embedding_dimension = custom_dimension`.
 - Default model being used is OpenAI's text-embedding-3-large.
 - Default max chunk size is 384 and min chunk size is 40. Change by the optional parameters: `max_chunk_size = custom_max_size` and `min_chunk_size = custom_min_size`.
 
@@ -67,24 +75,25 @@ a sciml__v20240817__textembedding3large-1024-Bool__v1.0.hdf5
 using AIHelpMe
 
 # Either use the index explicitly
-aihelp(index, "what is Sciml")
+aihelp(index_path, "what is DocsScraper.jl?")
 
 # or set it as the "default" index, then it will be automatically used for every question
-AIHelpMe.load_index!(index)
-aihelp("what is Sciml")
+AIHelpMe.load_index!(index_path)
+
+pprint(aihelp("what is DocsScraper.jl?"))
 ```
 ```
 [ Info: Updated RAG pipeline to `:bronze` (Configuration key: "textembedding3large-1024-Bool").
 [ Info: Loaded index from packs: julia into MAIN_INDEX
-[ Info: Loading index from sciml__v20240817__textembedding3large-1024-Bool__v1.0.hdf5
-[ Info: Loaded index a file sciml__v20240817__textembedding3large-1024-Bool__v1.0.hdf5 into MAIN_INDEX
-[ Info: Done with RAG. Total cost: $0.01
+[ Info: Loading index from Julia\DocsScraper.jl\docsscraper\Index\docsscraper__v20240823__textembedding3large-1024-Bool__v1.0.hdf5
+[ Info: Loaded index a file Julia\DocsScraper.jl\docsscraper\Index\docsscraper__v20240823__textembedding3large-1024-Bool__v1.0.hdf5 into MAIN_INDEX
+[ Info: Done with RAG. Total cost: $0.009
 --------------------
 AI Message
 --------------------
-SciML, or Scientific Machine Learning, is an ecosystem developed in the Julia programming language, aimed at solving equations and modeling systems while integrating the capabilities of      
-scientific computing and machine learning. It provides a range of tools with unified APIs, enabling features like differentiability, sensitivity analysis, high performance, and parallel      
-implementations. The SciML organization supports these tools and promotes their coherent use for various scientific applications.
+DocsScraper.jl is a Julia package designed to create a vector database from input URLs. It scrapes and parses the URLs and, with the assistance of      
+PromptingTools.jl, creates a vector store that can be utilized in RAG (Retrieval-Augmented Generation) applications. DocsScraper.jl integrates with     
+AIHelpMe.jl and PromptingTools.jl to provide efficient and relevant query retrieval, ensuring that the responses generated by the system are specific to the content in the created database.
 ```
 
 Tip: Use `pprint` for nicer outputs with sources
