@@ -116,15 +116,18 @@ function process_generic_node!(node::Gumbo.HTMLElement,
     num_children = length(children)
     is_code_block = false
     is_text_inserted = false
+    include_tags = [:p, :li, :dt, :dd, :pre, :b, :strong, :i,
+        :cite, :address, :em, :td, :a, :span, :header]
+    exclude_tags = [:script, :root, :style, :meta]
+
     for (index, child) in enumerate(children)
         # if the current tag belongs in the list, it is assumed that all the text/code should be part of a single paragraph/block, unless,
         # there occurs a code block with >50 chars, then, previously parsed text is inserted first, then the code block is inserted. 
 
-        if tag_name in [:p, :li, :dt, :dd, :pre, :b, :strong, :i,
-            :cite, :address, :em, :td, :a, :span, :header]
+        if tag_name in include_tags
             received_text, is_code_block, is_text_inserted = process_node!(
                 child, heading_hierarchy, parsed_blocks, false, prev_text_buffer)
-        elseif tag_name in [:script]
+        elseif tag_name in exclude_tags
             continue
         else
             received_text, is_code_block, is_text_inserted = process_node!(
