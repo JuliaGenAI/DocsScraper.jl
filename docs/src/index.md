@@ -30,6 +30,7 @@ Pkg.add(url="https://github.com/JuliaGenAI/DocsScraper.jl")
 
 ## Building the Index
 ```julia
+using DocsScraper
 crawlable_urls = ["https://juliagenai.github.io/DocsScraper.jl/dev"]
 
 index_path = make_knowledge_packs(crawlable_urls;
