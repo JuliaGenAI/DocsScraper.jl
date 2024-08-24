@@ -118,6 +118,6 @@ index_name\
 │
 └── index_name_URL_mapping.csv
 ```
-- Index directory contains the .hdf5 and .tar.gz files along with the artifact__info.txt. Artifact info contains sha256 and git-tree-sha1 hashes. 
-- Scraped_files directory contains the scraped chunks and sources. These are separated by the hostnames of the URLs.
+- Index\: contains the .hdf5 and .tar.gz files along with the artifact__info.txt. Artifact info contains sha256 and git-tree-sha1 hashes. 
+- Scraped_files\: contains the scraped chunks and sources. These are separated by the hostnames of the URLs.
 - URL_mapping.csv contains the scraped URLs mapping them with the estimated package name.
