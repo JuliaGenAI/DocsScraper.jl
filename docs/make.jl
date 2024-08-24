@@ -7,10 +7,10 @@ makedocs(;
     modules = [DocsScraper],
     authors = "Shreyas Agrawal @splendidbug  and contributors",
     sitename = "DocsScraper.jl",
-    repo = "https://github.com/splendidbug/DocsScraper.jl/blob/{commit}{path}#{line}",
+    repo = "https://github.com/JuliaGenAI/DocsScraper.jl/blob/{commit}{path}#{line}",
     format = Documenter.HTML(;
-        repolink = "https://github.com/splendidbug/DocsScraper.jl",
-        canonical = "https://splendidbug.github.io/DocsScraper.jl",
+        repolink = "https://github.com/JuliaGenAI/DocsScraper.jl",
+        canonical = "https://JuliaGenAI.github.io/DocsScraper.jl",
         edit_link = "main",
         assets = String[]),
     pages = ["Home" => "index.md",
@@ -18,7 +18,7 @@ makedocs(;
 )
 
 deploydocs(;
-    repo = "github.com/splendidbug/DocsScraper.jl",
+    repo = "github.com/JuliaGenAI/DocsScraper.jl",
     devbranch = "main",
     branch = "gh-pages"
 )
