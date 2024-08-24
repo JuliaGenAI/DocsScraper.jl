@@ -4,7 +4,7 @@
 Strip URL of any http:// ot https:// or www. prefixes 
 """
 function clean_url(url::String)
-    # Remove http://, https://, www., or wwws.
+    # Remove http://, https://, www.
     cleaned_url = replace(url, r"^https?://(www\d?\.)?" => "")
     return cleaned_url
 end

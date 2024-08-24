@@ -7,7 +7,7 @@ using AIHelpMe
 using AIHelpMe: pprint, last_result
 
 # Creating the index
-crawlable_urls = ["https://juliagenai.github.io/DocsScraper.jl/dev/home/"]
+crawlable_urls = ["https://juliagenai.github.io/DocsScraper.jl/dev/"]
 index_path = make_knowledge_packs(crawlable_urls;
     index_name = "docsscraper", embedding_dimension = 1024, embedding_bool = true,
     target_path = "knowledge_packs")

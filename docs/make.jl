@@ -5,7 +5,7 @@ DocMeta.setdocmeta!(DocsScraper, :DocTestSetup, :(using DocsScraper); recursive 
 
 makedocs(;
     modules = [DocsScraper],
-    authors = "Shreyas Agrawal @splendidbug  and contributors",
+    authors = "Shreyas Agrawal @splendidbug and contributors",
     sitename = "DocsScraper.jl",
     repo = "https://github.com/JuliaGenAI/DocsScraper.jl/blob/{commit}{path}#{line}",
     format = Documenter.HTML(;

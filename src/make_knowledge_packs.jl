@@ -62,7 +62,7 @@ end
 removes all dashes ('-') from a given string
 """
 function process_text(text::AbstractString)
-    return replace(lowercase(text), "-" => "", "_" => "")
+    return replace(lowercase(text), "-" => "", "_" => "", " " => "")
 end
 
 """
@@ -70,7 +70,7 @@ end
         single_urls::Vector{<:AbstractString} = String[], target_path::AbstractString = "", index_name::AbstractString = "")
 
 Validate args. Return error if both `crawlable_urls` and `single_urls` are empty. 
-Create a target path if input path is invalid. Create a gensym index if the input index is inavlid. 
+Create a target path if input path is invalid. Create a gensym index if the input index is invalid. 
 
 # Arguments
 - crawlable_urls: URLs that should be crawled to find more links
@@ -84,9 +84,8 @@ function validate_args(crawlable_urls::Vector{<:AbstractString} = String[];
         error("At least one of `input_urls` or `single_pages` must be provided.")
     end
     if !ispath(target_path)
-        @error "Target path $target_path does not exist"
-        target_path = joinpath(@__DIR__, "..", "knowledge_packs")
-        @info "Index path is set to: $target_path"
+        @warn "Target path provided does not exist. Creating path $target_path"
+        mkpath(target_path)
     end
 
     index_name = process_text(index_name)
@@ -177,7 +176,7 @@ Return chunks, sources by reading the .jls files in `joinpath(target_path, "Scra
 """
 function load_chunks_sources(target_path::AbstractString)
     scraped_files_dir = joinpath(target_path, "Scraped_files")
-    entries = readdir(joinpath(target_path, scraped_files_dir))
+    entries = readdir(scraped_files_dir)
 
     # Regular expressions to match the file patterns of chunks and sources
     chunks_pattern = r"^(.*)-chunks-max-(\d+)-min-(\d+)\.jls$"
