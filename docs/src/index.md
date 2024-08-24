@@ -32,7 +32,7 @@ Pkg.add("DocsScraper")
 crawlable_urls = ["https://juliagenai.github.io/DocsScraper.jl/dev/home/"]
 
 index_path = make_knowledge_packs(crawlable_urls;
-    index_name = "docsscraper", embedding_dimension = 1024, embedding_bool = true), target_path=joinpath(pwd(), "knowledge_packs")
+    index_name = "docsscraper", embedding_dimension = 1024, embedding_bool = true, target_path=joinpath(pwd(), "knowledge_packs"))
 ```
 ```julia
 [ Info: robots.txt unavailable for https://juliagenai.github.io:/DocsScraper.jl/dev/home/
