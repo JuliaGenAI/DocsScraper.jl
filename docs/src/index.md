@@ -97,3 +97,24 @@ Tip: Use `pprint` for nicer outputs with sources and `last_result` for more deta
 using AIHelpMe: last_result
 print(last_result())
 ```
+## Output
+`make_knowledge_packs` creates the following files:
+
+```
+index_name\
+│
+├── Index\
+│   ├── index_name__artifact__info.txt
+│   ├── index_name__vDate__model_embedding_size-embedding_type__v1.0.hdf5
+│   └── index_name__vDate__model_embedding_size-embedding_type__v1.0.tar.gz  
+│
+├── Scraped_files\
+│   ├── scraped_hostname-chunks-max-chunk_size-min-min_chunk_size.jls
+│   ├── scraped_hostname-sources-max-chunk_size-min-min_chunk_size.jls
+│   └── . . .
+│
+└── index_name_URL_mapping.csv
+```
+- Index directory contains the .hdf5 and .tar.gz files along with the artifact__info.txt. Artifact info contains sha256 and git-tree-sha1 hashes. 
+- Scraped_files directory contains the scraped chunks and sources. These are separated by the hostnames of the URLs.
+- URL_mapping.csv contains the scraped URLs mapping them with the estimated package name.

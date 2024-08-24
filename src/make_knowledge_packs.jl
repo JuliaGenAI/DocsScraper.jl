@@ -70,7 +70,7 @@ end
         single_urls::Vector{<:AbstractString} = String[], target_path::AbstractString = "", index_name::AbstractString = "")
 
 Validate args. Return error if both `crawlable_urls` and `single_urls` are empty. 
-Create a target path if input path is invalid. Create a gensym index if the input index is inavlid. 
+Create a target path if input path is invalid. Create a gensym index if the input index is invalid. 
 
 # Arguments
 - crawlable_urls: URLs that should be crawled to find more links
