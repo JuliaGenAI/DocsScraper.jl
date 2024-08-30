@@ -122,3 +122,6 @@ index_name\
 - Index\: contains the .hdf5 and .tar.gz files along with the artifact__info.txt. Artifact info contains sha256 and git-tree-sha1 hashes. 
 - Scraped_files\: contains the scraped chunks and sources. These are separated by the hostnames of the URLs.
 - URL_mapping.csv contains the scraped URLs mapping them with the estimated package name.
+
+## Google Summer of Code 2024
+This project was developed as part of the Google Summer of Code (GSoC) program. GSoC is a global program that offers student developers stipends to write code for open-source projects. We are grateful for the support and opportunity provided by Google and the open-source community through this initiative.
